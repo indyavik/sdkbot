@@ -1,0 +1,178 @@
+{
+    "arm-devtestlabs": {
+        "python_sdk": "devtestlabs",
+        "nuget_package": "Microsoft.Azure.Management.DevTestLabs"
+    },
+    "arm-resources/resources": {
+        "python_sdk": "resources.resources",
+        "nuget_package": "Microsoft.Azure.Management.ResourceManager"
+    },
+    "arm-servicebus": {
+        "python_sdk": "servicebus",
+        "nuget_package": "Microsoft.Azure.Management.ServiceBus"
+    },
+    "arm-machinelearning": {
+        "python_sdk": "machinelearning",
+        "nuget_package": "Microsoft.Azure.Management.MachineLearning"
+    },
+    "arm-documentdb": {
+        "python_sdk": "documentdb",
+        "nuget_package": ""
+    },
+    "arm-trafficmanager": {
+        "python_sdk": "trafficmanager",
+        "nuget_package": "Microsoft.Azure.Management.TrafficManager.Fluent"
+    },
+    "arm-resources/policy": {
+        "python_sdk": "resources.policy",
+        "nuget_package": "Microsoft.Azure.Management.ResourceManager"
+    },
+    "arm-storage": {
+        "python_sdk": "storage",
+        "nuget_package": "Microsoft.AzureStack.Management.Storage"
+    },
+    "arm-datalake-analytics/account": {
+        "python_sdk": "datalake.analytics.account",
+        "nuget_package": "Microsoft.Azure.Management.DataLake.Analytics "
+    },
+    "arm-web": {
+        "python_sdk": "web",
+        "nuget_package": "Microsoft.Azure.Management.WebSites"
+    },
+    "arm-logic": {
+        "python_sdk": "logic",
+        "nuget_package": "Microsoft.Azure.Management.Logic"
+    },
+    "arm-keyvault": {
+        "python_sdk": "keyvault",
+        "nuget_package": "Microsoft.Azure.Management.KeyVault"
+    },
+    "monitor": {
+        "python_sdk": "monitor.data",
+        "nuget_package": "Microsoft.WindowsAzure.Management.Monitoring"
+    },
+    "arm-servermanagement": {
+        "python_sdk": "servermanager",
+        "nuget_package": "Microsoft.Azure.Management.ServerManagement"
+    },
+    "arm-resources/locks": {
+        "python_sdk": "resources.lock",
+        "nuget_package": "Microsoft.Azure.Management.ResourceManager"
+    },
+    "arm-resources/subscriptions": {
+        "python_sdk": "resources.subscriptions",
+        "nuget_package": "Microsoft.Azure.Management.ResourceManager"
+    },
+    "arm-scheduler": {
+        "python_sdk": "scheduler",
+        "nuget_package": "Microsoft.Azure.Management.Scheduler"
+    },
+    "arm-datalake-analytics/job": {
+        "python_sdk": "datalake.analytics.job",
+        "nuget_package": "Microsoft.Azure.Management.DataLake.Analytics"
+    },
+    "arm-iothub": {
+        "python_sdk": "iothub",
+        "nuget_package": "Microsoft.Azure.Management.IotHub"
+    },
+    "arm-search": {
+        "python_sdk": "search",
+        "nuget_package": "Microsoft.Azure.Management.Search"
+    },
+    "arm-resources/links": {
+        "python_sdk": "resources.links",
+        "nuget_package": "Microsoft.Azure.Management.ResourceManager"
+    },
+    "arm-intune": {
+        "python_sdk": "intune",
+        "nuget_package": "Microsoft.Azure.Management.Intune"
+    },
+    "keyvault": {
+        "python_sdk": "keyvault.data",
+        "nuget_package": "Microsoft.Azure.KeyVault"
+    },
+    "arm-commerce": {
+        "python_sdk": "commerce",
+        "nuget_package": "Microsoft.Azure.Commerce.UsageAggregates"
+    },
+    "arm-cdn": {
+        "python_sdk": "cdn",
+        "nuget_package": "Microsoft.Azure.Management.Cdn"
+    },
+    "arm-network": {
+        "python_sdk": "network",
+        "nuget_package": "Microsoft.Azure.Management.Network"
+    },
+    "arm-cognitiveservices": {
+        "python_sdk": "cognitiveservices",
+        "nuget_package": "Microsoft.Azure.Management.CognitiveServices"
+    },
+    "arm-monitor": {
+        "python_sdk": "monitor.mgmt",
+        "nuget_package": "Microsoft.WindowsAzure.Management.Monitoring"
+    },
+    "arm-mediaservices": {
+        "python_sdk": "media",
+        "nuget_package": "Microsoft.Azure.Management.Media"
+    },
+    "arm-authorization": {
+        "python_sdk": "authorization",
+        "nuget_package": "Microsoft.Azure.Management.Authorization"
+    },
+    "arm-graphrbac": {
+        "python_sdk": "graphrbac",
+        "nuget_package": "Microsoft.Azure.Management.Graph.RBAC.Fluent"
+    },
+    "arm-resources/features": {
+        "python_sdk": "resources.features",
+        "nuget_package": "Microsoft.Azure.Management.ResourceManager"
+    },
+    "arm-compute": {
+        "python_sdk": "compute",
+        "nuget_package": "Microsoft.Azure.Management.Compute"
+    },
+    "arm-containerregistry": {
+        "python_sdk": "containerregistry",
+        "nuget_package": "Microsoft.Azure.Management.ContainerRegistry"
+    },
+    "arm-notificationhubs": {
+        "python_sdk": "notificationhubs",
+        "nuget_package": "Microsoft.Azure.Management.NotificationHubs"
+    },
+    "arm-datalake-analytics/catalog": {
+        "python_sdk": "datalake.analytics.catalog",
+        "nuget_package": "Microsoft.Azure.Management.DataLake.Analytics"
+    },
+    "batch": {
+        "python_sdk": "batch",
+        "nuget_package": ""
+    },
+    "arm-eventhub": {
+        "python_sdk": "eventhub",
+        "nuget_package": "Microsoft.Azure.Management.EventHub"
+    },
+    "arm-batch": {
+        "python_sdk": "batch.management",
+        "nuget_package": "Microsoft.Azure.Management.Batch"
+    },
+    "arm-sql": {
+        "python_sdk": "sql",
+        "nuget_package": "Microsoft.Azure.Management.Sql"
+    },
+    "arm-dns": {
+        "python_sdk": "dns",
+        "nuget_package": "Microsoft.Azure.Management.Dns"
+    },
+    "arm-powerbiembedded": {
+        "python_sdk": "powerbiembedded",
+        "nuget_package": "Microsoft.Azure.Management.PowerBIEmbedded"
+    },
+    "arm-datalake-store/account": {
+        "python_sdk": "datalake.store.account",
+        "nuget_package": "Microsoft.Azure.Management.DataLake.Store"
+    },
+    "arm-redis": {
+        "python_sdk": "redis",
+        "nuget_package": "Microsoft.Azure.Management.Redis"
+    }
+}
