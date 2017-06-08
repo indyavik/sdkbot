@@ -14,7 +14,7 @@ app = Flask(__name__)
 swagger_url = 'https://raw.githubusercontent.com/Azure/azure-sdk-for-python/master/swagger_to_sdk_config.json' 
 swagger_to_sdk = helpers.request_helper(swagger_url)
 git_url = 'https://api.github.com/repos/Azure/azure-rest-api-specs/'
-access_token = '2dd078a2a012e23bed1ff39015ead3675bc9f1d0'
+access_token = '0e1476fa7879ddea0d6d7c4b5c7456ab90db6543'
 this_repo = "https://api.github.com/repos/indyavik/azuresdk/issues"
 issue_assignees =['indyavik']
 

@@ -4,6 +4,7 @@ import http
 import io
 import json
 import re
+import os
 from functools import wraps
 
 import aiohttp
@@ -84,51 +85,44 @@ def decorate_credentials(git_username, oauth_token):
     return actual_decorator
 
 
-async def at_generate(event_data_dict, username, oauth_token):
+async def at_generate(event_data_dict):
     """Response to comments such as '@bot generate dns' """
     
     pr_url = event_data_dict['issue']['pull_request'].get('url') 
     repo = event_data_dict['repository'].get('full_name')
     comment = event_data_dict['comment']['body']
     action_body = comment.split(' ')[2:]
-    repo =  action_body[0]
+    repo2 =  action_body[0]
   
     #get branch name via github api 
     async with aiohttp.ClientSession() as session:
-        async with aiohttp.ClientSession() as session:
 
-            #gh = gidgethub.aiohttp.GitHubAPI(session, 'indyavik',oauth_token="767d1a76e004ec56d5d57c7394974a9e6b7a6a0e")
+        #gh = gidgethub.aiohttp.GitHubAPI(session, 'indyavik',oauth_token="767d1a76e004ec56d5d57c7394974a9e6b7a6a0e")
 
-            gh = gidgethub.aiohttp.GitHubAPI(session, username,oauth_token=oauth_token)
+        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
 
-            try:
-                data = await gh.getitem(pr_url)
-                branch = data['head']['label'].split(':')[1] #e.g. 'bottest'
-                
-            except gidgethub.BadRequest as exc:
-                print(exc.status_code)
-                return {'Err' : exc.status_code }
-                
-        if branch:
-                generated_action = "docker run swagger-to-sdk {} -p {} -b {}".format(repo, repo, branch)
-
-                return {'Ans' : generated_action }
-
-async def at_list(event_data_dict, username, oauth_token):
-    """Response to comments such as '@bot generate dns' """
-    
-    pass 
+        try:
+            data = await gh.getitem(pr_url)
+            branch = data['head']['label'].split(':')[1] #e.g. 'bottest'
+            
+        except gidgethub.BadRequest as exc:
+            print(exc.status_code)
+            return {'Err' : exc.status_code }
+            
+    if branch:
+        generated_action = "docker run swagger-to-sdk {} -p {} -b {}".format(repo, repo2, branch)
+        return {'Ans' : generated_action }
 
 
 
-async def at_label(event_data_dict, username, oauth_token, post_repo_url, assignee_list):
+async def at_label(event_data_dict, post_repo_url, assignee_list):
     """Response to label creation 'KeyVault' - > assign issue to a 'list' of users. """
     
     issue_number = event_data_dict['issue']['number']
     url = post_repo_url+ "/" + str(issue_number)
     async with aiohttp.ClientSession() as session:
 
-        gh = gidgethub.aiohttp.GitHubAPI(session, username,oauth_token=oauth_token)
+        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
 
         try:
             print('am here')
@@ -139,10 +133,11 @@ async def at_label(event_data_dict, username, oauth_token, post_repo_url, assign
             print(exc.status_code)
             return {'Err' : exc.status_code }
 
-async def get_azure_folder_params(git_url, azure_folder_name, gituser, gittoken ):
+async def get_azure_folder_params(git_url, azure_folder_name):
     
     async with aiohttp.ClientSession() as session:
-        gh = gidgethub.aiohttp.GitHubAPI(session, gituser ,oauth_token=gittoken)
+
+        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
         try:
             rcomposite = await gh.getitem(git_url + 'contents/' + azure_folder_name)
 
@@ -183,24 +178,47 @@ async def get_azure_folder_params(git_url, azure_folder_name, gituser, gittoken 
         return (most_recent_composite_status, sorted(folders), swagger)
 
 
-async def get_swagger_from_folders(git_url, azure_folder_name, folder_list, gituser, gittoken ):
+async def get_swagger_path_from_folders(git_url, azure_folder_name, folder_list=None, folder=None):
 
-    d = {}
-    d['azure_api'] = azure_folder_name
-    d['folders'] = folder_list
-    d['is_composite'] = 'no'
+    """
+    returns a swagger path for a specific folder. 
+    if a list of folders are proived --> returns a dictionary with keys = folder, and value = swagger path 
 
-    async with aiohttp.ClientSession() as session:
-        gh = gidgethub.aiohttp.GitHubAPI(session, gituser ,oauth_token=gittoken)
-        for f in folder_list:
-            url = git_url  + 'contents/' +  azure_folder_name + '/' + f +'/swagger/'
+    """
+
+    if (not folder and folder_list):
+        return {'error' : 'incorrect inputs'}
+
+    if folder_list:
+
+        d = {}
+        d['azure_api'] = azure_folder_name
+        d['folders'] = folder_list
+        d['is_composite'] = 'no'
+
+        async with aiohttp.ClientSession() as session:
+            gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
+            for f in folder_list:
+                url = git_url  + 'contents/' +  azure_folder_name + '/' + f +'/swagger/'
+                swagger_content = await gh.getitem(url)
+                if (swagger_content and swagger_content[0].get('path') ):
+                    d[f] = swagger_content[0].get('path')
+                else:
+                    d[f] = 'swagger not found'
+
+        return d 
+
+    if folder:
+        #returns a swagger path for a given folder. 
+        async with aiohttp.ClientSession() as session:
+
+            gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
+            url = git_url  + 'contents/' +  azure_folder_name + '/' + folder +'/swagger/'
             swagger_content = await gh.getitem(url)
-            if (swagger_content and swagger_content[0].get('path') ):
-                d[f] = swagger_content[0].get('path')
-            else:
-                d[f] = 'swagger not found'
 
-    return d 
+            if (swagger_content and swagger_content[0].get('path') ):
+                return swagger_content[0].get('path')
+          
 
 
 

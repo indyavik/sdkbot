@@ -5,7 +5,7 @@ import os, json,shutil
 import requests, jinja2
 import hmac
 import hashlib
-from cron import helpers
+
 import utils
 import asyncio
 
@@ -17,9 +17,14 @@ swagger_url = 'https://raw.githubusercontent.com/Azure/azure-sdk-for-python/mast
 
 git_url = 'https://api.github.com/repos/Azure/azure-rest-api-specs/'
 github_user = 'indyavik'
-github_access_token = '767d1a76e004ec56d5d57c7394974a9e6b7a6a0e'
+
+#github_access_token = '0e1476fa7879ddea0d6d7c4b5c7456ab90db6543'
+
+github_access_token = os.environ.get('TOKEN')
+
 this_repo = "https://api.github.com/repos/indyavik/azuresdk/issues"
-issue_assignees =['indyavik']
+issue_assignees =['indyavik'] # fake a dictionary . label = 'xyz' then assign to the value ['', '']
+
 
 swagger_to_sdk = utils.request_helper(swagger_url, github_access_token)
 
@@ -78,7 +83,7 @@ def payload():
             and comment_action == 'generate') :
 
             response = loop.run_until_complete(
-                        utils.at_generate(payload, github_user, github_access_token))
+                        utils.at_generate(payload))
 
             print (response)
             if response:
@@ -88,19 +93,26 @@ def payload():
         #@bot list dns 
         if comment_action == 'list': 
 
+
             project = swagger_to_sdk['projects'][action_body[0]]
             azure_api_name, c_composite, c_swagger, sdk, namespace = utils.parse_swagger_to_sdk_config(project)
             
             is_comp, folder_list, use_swagger =  loop.run_until_complete(
-                                            utils.get_azure_folder_params(git_url, azure_api_name, github_user, github_access_token) )#git_url, azure_folder_name, gituser, gittoken )
+                                            utils.get_azure_folder_params(git_url, azure_api_name) )#git_url, azure_folder_name, gituser, gittoken )
             
             if is_comp == 'No':
 
-                response = loop.run_until_complete(
-                    utils.get_swagger_from_folders(git_url, azure_api_name, folder_list, github_user, github_access_token ))
+                d = {}
+                d['azure_api'] = azure_api_name
+                d['is_composite'] = 'no'
 
-                if response:
-                    return jsonify(response)
+                for i in range(len(folder_list)):
+                    d[str(i)] = folder_list[i]
+
+                print (d)
+
+
+                return jsonify(d)
   
 
             else:
@@ -113,6 +125,50 @@ def payload():
 
         #@bot update dns 2 
 
+        if comment_action == 'update': 
+            print('ere')
+
+            if not action_body[1]: #1..2...3...
+
+                return {'Error' : 'unspecified folder number (1..2...3..'}
+
+ 
+            swagger_to_sdk_project_name = action_body[0] #billing, cdn etc. 
+
+            project = swagger_to_sdk['projects'][swagger_to_sdk_project_name]
+
+
+
+            azure_api_name, c_composite, c_swagger, sdk, namespace = utils.parse_swagger_to_sdk_config(project)
+            
+            is_comp, folder_list, use_swagger =  loop.run_until_complete(
+                                            utils.get_azure_folder_params(git_url, azure_api_name) )
+
+
+            if is_comp == 'No':
+                #get the swagger path 
+                if (int(action_body[1]) < len(folder_list)):
+                    folder = folder_list[int(action_body[1])]
+                else:
+                    return jsonify({'Error:' : 'list value exceed the length'})
+
+                #get updated swagger for this folder, e.g.  arm-billing/2017-04-24-preview/swagger/billing.json
+               
+                updated_swagger = loop.run_until_complete(
+                                utils.get_swagger_path_from_folders(git_url, azure_api_name, folder= folder))
+
+                #update the project and return
+
+                project['swagger'] = updated_swagger
+
+                updated_project_json = {}
+
+                updated_project_json[swagger_to_sdk_project_name]  = project
+
+                return ("``` JSON " + json.dumps(updated_project_json) + "```")
+
+
+
     #label => KeyVault
 
     if event_name == 'issues' and action == 'labeled' :
@@ -123,17 +179,17 @@ def payload():
         if 'KeyVault' in labels:
 
             response = loop.run_until_complete(
-                        utils.at_label(payload, github_user, github_access_token, this_repo, issue_assignees))
+                        utils.at_label(payload, this_repo, issue_assignees))
 
             print (response)
             if response:
                 return jsonify(response)
 
 
-        return jsonify({'response' : 'recieved OK, no action taken'})
+        
+    return jsonify({'response' : 'recieved OK, no action taken'})
 
 
-    #return 'Flask is running!'
 
 if __name__ == '__main__':
     app.run()
