@@ -65,74 +65,6 @@ def parse_swagger_to_sdk_config(project):
     return (azure_api, folder, swagger_name, sdk, namespace)
 
 
-def decorate_credentials(git_username, oauth_token):
-    def actual_decorator(f):
-        """Decorator to add github credentials and base urls as variables"""
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            #spec_api_repo_url, sdk_repo_url, username, credentials
-            kwargs['sdk_repo_url'] = 'https://raw.githubusercontent.com/Azure/azure-sdk-for-python'
-
-            #target repo =repo where labels are added/issues are assigned. 
-            kwargs['target_repo'] = 'https://api.github.com/repos/indyavik/azuresdk'
-
-            kwargs['oauth_token'] = oauth_token
-            kwargs['username'] = git_username
-
-            return f(*args, **kwargs)
-
-        return decorated
-    return actual_decorator
-
-
-async def at_generate(event_data_dict):
-    """Response to comments such as '@bot generate dns' """
-    
-    pr_url = event_data_dict['issue']['pull_request'].get('url') 
-    repo = event_data_dict['repository'].get('full_name')
-    comment = event_data_dict['comment']['body']
-    action_body = comment.split(' ')[2:]
-    repo2 =  action_body[0]
-  
-    #get branch name via github api 
-    async with aiohttp.ClientSession() as session:
-
-        #gh = gidgethub.aiohttp.GitHubAPI(session, 'indyavik',oauth_token="767d1a76e004ec56d5d57c7394974a9e6b7a6a0e")
-
-        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
-
-        try:
-            data = await gh.getitem(pr_url)
-            branch = data['head']['label'].split(':')[1] #e.g. 'bottest'
-            
-        except gidgethub.BadRequest as exc:
-            print(exc.status_code)
-            return {'Err' : exc.status_code }
-            
-    if branch:
-        generated_action = "docker run swagger-to-sdk {} -p {} -b {}".format(repo, repo2, branch)
-        return {'Ans' : generated_action }
-
-
-
-async def at_label(event_data_dict, post_repo_url, assignee_list):
-    """Response to label creation 'KeyVault' - > assign issue to a 'list' of users. """
-    
-    issue_number = event_data_dict['issue']['number']
-    url = post_repo_url+ "/" + str(issue_number)
-    async with aiohttp.ClientSession() as session:
-
-        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
-
-        try:
-            print('am here')
-            await gh.post(url, data= { 'assignees':assignee_list} )
-            return {'Action' : 'Successfully updated assignees for this issue'}
-
-        except gidgethub.BadRequest as exc:
-            print(exc.status_code)
-            return {'Err' : exc.status_code }
-
 async def get_azure_folder_params(git_url, azure_folder_name):
     
     async with aiohttp.ClientSession() as session:
@@ -172,7 +104,7 @@ async def get_azure_folder_params(git_url, azure_folder_name):
 
         except gidgethub.BadRequest as exc:
             print(exc.status_code)
-            return {'Err' : exc.status_code }
+            return "Error" + exc.status_code
         
         
         return (most_recent_composite_status, sorted(folders), swagger)
@@ -218,6 +150,69 @@ async def get_swagger_path_from_folders(git_url, azure_folder_name, folder_list=
 
             if (swagger_content and swagger_content[0].get('path') ):
                 return swagger_content[0].get('path')
+
+async def post_response(post_repo_url, response):
+    """Post a response by github bot to the issue where the @bot request originated """
+
+    async with aiohttp.ClientSession() as session:
+
+        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
+
+        try:
+            await gh.post(post_repo_url, data= response )
+            return "success"
+
+        except gidgethub.BadRequest as exc:
+            print(exc.status_code)
+            return "Error" + exc.status_code
+
+async def at_generate(event_data_dict):
+    """Response to comments such as '@bot generate dns' """
+    
+    pr_url = event_data_dict['issue']['pull_request'].get('url') 
+    repo = event_data_dict['repository'].get('full_name')
+    comment = event_data_dict['comment']['body']
+    action_body = comment.split(' ')[2:]
+    repo2 =  action_body[0]
+  
+    #get branch name via github api 
+    async with aiohttp.ClientSession() as session:
+
+        #gh = gidgethub.aiohttp.GitHubAPI(session, 'indyavik',oauth_token="767d1a76e004ec56d5d57c7394974a9e6b7a6a0e")
+
+        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
+
+        try:
+            data = await gh.getitem(pr_url)
+            branch = data['head']['label'].split(':')[1] #e.g. 'bottest'
+            
+        except gidgethub.BadRequest as exc:
+            print(exc.status_code)
+            return "Error" + exc.status_code
+            
+    if branch:
+        generated_action = "docker run swagger-to-sdk {} -p {} -b {}".format(repo, repo2, branch)
+        return generated_action
+
+
+
+async def at_label(post_repo_url, assignee_list):
+    """Response to label creation 'KeyVault' - > assign issue to a 'list' of users. """
+
+    async with aiohttp.ClientSession() as session:
+
+        gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
+
+        try:
+            
+            await gh.post(post_repo_url, data= { 'assignees':assignee_list} )
+
+            return 'Successfully assigned the issue to - [ ' + ','.join(assignee_list) + ' ]' 
+
+        except gidgethub.BadRequest as exc:
+            print(exc.status_code)
+            return "Error" + exc.status_code
+    
           
 
 

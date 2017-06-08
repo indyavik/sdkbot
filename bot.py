@@ -16,17 +16,17 @@ app = Flask(__name__)
 swagger_url = 'https://raw.githubusercontent.com/Azure/azure-sdk-for-python/master/swagger_to_sdk_config.json' 
 
 git_url = 'https://api.github.com/repos/Azure/azure-rest-api-specs/'
-github_user = 'indyavik'
-
-#github_access_token = '0e1476fa7879ddea0d6d7c4b5c7456ab90db6543'
 
 github_access_token = os.environ.get('TOKEN')
 
 this_repo = "https://api.github.com/repos/indyavik/azuresdk/issues"
+
 issue_assignees =['indyavik'] # fake a dictionary . label = 'xyz' then assign to the value ['', '']
 
+issue_assignees = { 'KeyVault' : ['indyavik'] }
 
 swagger_to_sdk = utils.request_helper(swagger_url, github_access_token)
+
 
 def check_secret(f):
     @wraps(f)
@@ -60,132 +60,184 @@ def payload():
     event_name = request.headers.get('X-GitHub-Event')
     action = payload['action']
 
+
     comment = None 
 
-    if payload.get('comment'):
+    if event_name == 'issue_comment' : 
 
-        comment = payload['comment']['body']
-        print (comment)
+        issue_url = payload['issue']['url']
+        repo_url = payload['issue']['repository_url']
 
-    if comment and comment.startswith('@bot'):
-        
-        atbot, comment_action = tuple(comment.split(' ')[0:2])
+        if payload.get('comment'):
 
-        action_body = comment.split(' ')[2:]
+            comment = payload['comment']['body']
+            print ('comment is :' + comment)
 
-        print('action_body')
-        print(action_body)
-
-        print('comment-action is' + comment_action)
-
-        #@bot generate dns 
-        if (action == 'created' 
-            and comment_action == 'generate') :
-
-            response = loop.run_until_complete(
-                        utils.at_generate(payload))
-
-            print (response)
-            if response:
-                return jsonify(response)
-
-
-        #@bot list dns 
-        if comment_action == 'list': 
-
-
-            project = swagger_to_sdk['projects'][action_body[0]]
-            azure_api_name, c_composite, c_swagger, sdk, namespace = utils.parse_swagger_to_sdk_config(project)
+        if comment and comment.startswith('@bot'):
             
-            is_comp, folder_list, use_swagger =  loop.run_until_complete(
-                                            utils.get_azure_folder_params(git_url, azure_api_name) )#git_url, azure_folder_name, gituser, gittoken )
-            
-            if is_comp == 'No':
+            atbot, comment_action = tuple(comment.split(' ')[0:2])
 
-                d = {}
-                d['azure_api'] = azure_api_name
-                d['is_composite'] = 'no'
+            action_body = comment.split(' ')[2:]
 
-                for i in range(len(folder_list)):
-                    d[str(i)] = folder_list[i]
+            print('action_body')
+            print(action_body)
 
-                print (d)
+            print('comment-action is' + comment_action)
 
+            #@bot generate dns 
+            if (action == 'created' 
+                and comment_action == 'generate') :
 
-                return jsonify(d)
-  
+                response = loop.run_until_complete(
+                            utils.at_generate(payload))
 
-            else:
-                d = {}
-                d['azure_api'] = azure_api_name
-                d['use_swagger'] = use_swagger
-                d['is_composite'] = 'yes'
+                print (response)
 
-                return jsonify(d) 
+                if response:
 
-        #@bot update dns 2 
-
-        if comment_action == 'update': 
-            print('ere')
-
-            if not action_body[1]: #1..2...3...
-
-                return {'Error' : 'unspecified folder number (1..2...3..'}
-
- 
-            swagger_to_sdk_project_name = action_body[0] #billing, cdn etc. 
-
-            project = swagger_to_sdk['projects'][swagger_to_sdk_project_name]
+                    pr = loop.run_until_complete(utils.post_response(issue_url + '/comments', {'body': response } ))
+                    if 'success' in pr:
+                        return (response)
+                    else:
+                        return (pr)
 
 
-
-            azure_api_name, c_composite, c_swagger, sdk, namespace = utils.parse_swagger_to_sdk_config(project)
-            
-            is_comp, folder_list, use_swagger =  loop.run_until_complete(
-                                            utils.get_azure_folder_params(git_url, azure_api_name) )
+            #@bot list dns 
+            if comment_action == 'list': 
 
 
-            if is_comp == 'No':
-                #get the swagger path 
-                if (int(action_body[1]) < len(folder_list)):
-                    folder = folder_list[int(action_body[1])]
+                project = swagger_to_sdk['projects'][action_body[0]]
+                azure_api_name, c_composite, c_swagger, sdk, namespace = utils.parse_swagger_to_sdk_config(project)
+                
+                is_comp, folder_list, use_swagger =  loop.run_until_complete(
+                                                utils.get_azure_folder_params(git_url, azure_api_name) )#git_url, azure_folder_name, gituser, gittoken )
+                
+                if is_comp == 'No':
+
+                    d = {}
+                    d['azure_api'] = azure_api_name
+                    d['is_composite'] = 'no'
+
+                    string_response = ''
+
+                    for i in range(len(folder_list)):
+                        d[str(i)] = folder_list[i]
+                        string_response + str(i) +':' + folder_list[i] +','
+
+                    pr = loop.run_until_complete(utils.post_response(issue_url + '/comments' , {'body': string_response } ))
+
+                    if 'success' in pr:
+                        return jsonify(d)
+                    else:
+                        return jsonify(pr)
+      
+
                 else:
-                    return jsonify({'Error:' : 'list value exceed the length'})
+                    d = {}
+                    d['azure_api'] = azure_api_name
+                    d['use_swagger'] = use_swagger
+                    d['is_composite'] = 'yes'
 
-                #get updated swagger for this folder, e.g.  arm-billing/2017-04-24-preview/swagger/billing.json
-               
-                updated_swagger = loop.run_until_complete(
-                                utils.get_swagger_path_from_folders(git_url, azure_api_name, folder= folder))
+                    string_response = 'Composite project. No folders to list'
 
-                #update the project and return
+                    pr = loop.run_until_complete(utils.post_response(issue_url + '/comments', {'body': string_response } ))
 
-                project['swagger'] = updated_swagger
+                    if 'success' in pr:
+                        return jsonify(d)
+                    else:
+                        return jsonify(pr)
 
-                updated_project_json = {}
+            #@bot update dns 2 
 
-                updated_project_json[swagger_to_sdk_project_name]  = project
+            if comment_action == 'update': 
+                print('ere')
 
-                return ("``` JSON " + json.dumps(updated_project_json) + "```")
+                if not action_body[1]: #1..2...3...
+
+                    response = 'Error : unspecified folder number (1..2...3..)'
+
+                    pr = loop.run_until_complete(utils.post_response(issue_url + '/comments', {'body' : response } ))
+
+                    if 'success' in pr:
+                        return (response)
+                    else:
+                        return (pr)
+
+     
+                swagger_to_sdk_project_name = action_body[0] #billing, cdn etc. 
+
+                project = swagger_to_sdk['projects'][swagger_to_sdk_project_name]
+
+
+                azure_api_name, c_composite, c_swagger, sdk, namespace = utils.parse_swagger_to_sdk_config(project)
+                
+                is_comp, folder_list, use_swagger =  loop.run_until_complete(
+                                                utils.get_azure_folder_params(git_url, azure_api_name) )
+
+
+                if is_comp == 'No':
+                    #get the swagger path 
+                    if (int(action_body[1]) < len(folder_list)):
+                        folder = folder_list[int(action_body[1])]
+                    else:
+                        response = 'Error : list value' +  action_body[1] + 'exceed the length'
+                        pr = loop.run_until_complete(utils.post_response(issue_url + '/comments', {'body' : response } ))
+
+                        return jsonify({'Error' : 'list value exceed the length'})
+
+                    #get updated swagger for this folder, e.g.  arm-billing/2017-04-24-preview/swagger/billing.json
+                   
+                    updated_swagger = loop.run_until_complete(
+                                    utils.get_swagger_path_from_folders(git_url, azure_api_name, folder= folder))
+
+                    #update the project and return
+
+                    project['swagger'] = updated_swagger
+
+                    updated_project_json = {}
+
+                    updated_project_json[swagger_to_sdk_project_name]  = project
+
+                    response =  "``` JSON \n" + json.dumps(updated_project_json) + " \n ```" 
+
+                    pr = loop.run_until_complete(utils.post_response(issue_url + '/comments', {'body' : response } ))
+                    #r = requests.post(issue_url + '/comments', json.dumps(response),  auth=('username', github_access_token))
+
+                    if 'success' in pr:
+                        return (response)
+                    else:
+                        return(pr)
 
 
 
     #label => KeyVault
 
     if event_name == 'issues' and action == 'labeled' :
+
         print('checking keyvalue')
 
-        labels = payload['label']['name'] 
+        issue_url = payload['issue']['url']
+        print(issue_url)
+        repo_url = payload['issue']['repository_url']
 
-        if 'KeyVault' in labels:
+        label = payload['label']['name'] 
+        assignees = issue_assignees.get(label)
+
+        if assignees:
 
             response = loop.run_until_complete(
-                        utils.at_label(payload, this_repo, issue_assignees))
+                        utils.at_label(issue_url, assignees))
 
             print (response)
+
             if response:
-                return jsonify(response)
+                pr = loop.run_until_complete(utils.post_response(issue_url + '/comments', {'body' : response } ))
 
-
+                if 'success' in pr:
+                    return (response)
+                else:
+                    return (pr)
+     
         
     return jsonify({'response' : 'recieved OK, no action taken'})
 
