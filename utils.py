@@ -178,7 +178,7 @@ async def at_generate(event_data_dict):
     #get branch name via github api 
     async with aiohttp.ClientSession() as session:
 
-        #gh = gidgethub.aiohttp.GitHubAPI(session, 'indyavik',oauth_token="767d1a76e004ec56d5d57c7394974a9e6b7a6a0e")
+        #gh = gidgethub.aiohttp.GitHubAPI(session, 'indyavik',oauth_token=".....")
 
         gh = gidgethub.aiohttp.GitHubAPI(session, 'username' ,oauth_token=os.environ.get('TOKEN'))
 
