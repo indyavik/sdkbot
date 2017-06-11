@@ -30,17 +30,30 @@ def request_helper(url, access_token):
         return r.json()
 
 def parse_swagger_to_sdk_config(project):
-#count the #  of slashes 1 ->, composite file. , 3 =>swagger file with datefolder. > 3 staggered/subprojects. 
-#Use the fact that folder -=2015, 2016, 2017. ..starts with 20
+    """
+    for each project from swagger_to_sdk_config, returns the corresponding Azure Api name, swagger file being used, 
+    folder, and less importantly namespace. 
+
+    """
 
     sdk = project['output_dir'].split('/')[0]
+    namespace = "no-name-space"
 
-    namespace = project['autorest_options']['Namespace']
+    if project.get('markdown'):
+        swagger_file_path = project.get('markdown')
 
-    if not namespace:
-        namespace = ''
-
-    swagger_file_path = project['swagger']
+    if project.get('autorest_options'):
+        autorest_options = project.get('autorest_options')
+        namespace = project['autorest_options']['namespace']
+        swaggerfile = autorest_options.get('input-file')
+        if swaggerfile:
+            swagger_file_path = swaggerfile
+        else:
+            compositefile = project.get("composite")
+            if compositefile:
+                swagger_file_path = compositefile
+            else:
+                return None 
 
     if not swagger_file_path:
         return None 
@@ -51,7 +64,6 @@ def parse_swagger_to_sdk_config(project):
         azure_api = '/'.join(split_path[0].split('/')[0:-1])
         folder, swagger_name = split_path[0].split('/')[-1], split_path[-1]
 
-
     else:
         #is a composite file. 
         folder = 'Composite'
@@ -59,7 +71,6 @@ def parse_swagger_to_sdk_config(project):
         azure_api, swagger_name = split_path[0], split_path[-1]
 
     #print azure_api, folder, swagger_name
-
 
     #print azure_api_spec_folder, date_folder, swagger_file
     return (azure_api, folder, swagger_name, sdk, namespace)
@@ -115,7 +126,6 @@ async def get_swagger_path_from_folders(git_url, azure_folder_name, folder_list=
     """
     returns a swagger path for a specific folder. 
     if a list of folders are proived --> returns a dictionary with keys = folder, and value = swagger path 
-
     """
 
     if (not folder and folder_list):

@@ -21,7 +21,6 @@ github_access_token = os.environ.get('TOKEN')
 
 this_repo = "https://api.github.com/repos/indyavik/azuresdk/issues"
 
-issue_assignees =['indyavik'] # fake a dictionary . label = 'xyz' then assign to the value ['', '']
 
 issue_assignees = { 'KeyVault' : ['indyavik'] }
 
@@ -108,10 +107,16 @@ def payload():
 
                 project = swagger_to_sdk['projects'][action_body[0]]
                 azure_api_name, c_composite, c_swagger, sdk, namespace = utils.parse_swagger_to_sdk_config(project)
-                
+                print ("azure_api: " + azure_api_name)
+
+                print(loop.run_until_complete(
+                                                utils.get_azure_folder_params(git_url, azure_api_name) ))#)
+
                 is_comp, folder_list, use_swagger =  loop.run_until_complete(
                                                 utils.get_azure_folder_params(git_url, azure_api_name) )#git_url, azure_folder_name, gituser, gittoken )
                 
+
+            
                 if is_comp == 'No':
 
                     d = {}
@@ -122,7 +127,7 @@ def payload():
 
                     for i in range(len(folder_list)):
                         d[str(i)] = folder_list[i]
-                        string_response + str(i) +':' + folder_list[i] +','
+                        string_response += str(i) +':' + folder_list[i] +','
 
                     pr = loop.run_until_complete(utils.post_response(issue_url + '/comments' , {'body': string_response } ))
 
