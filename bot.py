@@ -9,6 +9,7 @@ import hashlib
 import utils
 import asyncio
 
+
 app = Flask(__name__)
 
 #key configurations 
@@ -19,8 +20,8 @@ git_url = 'https://api.github.com/repos/Azure/azure-rest-api-specs/'
 
 github_access_token = os.environ.get('TOKEN')
 
-this_repo = "https://api.github.com/repos/indyavik/azuresdk/issues"
 
+this_repo = "https://api.github.com/repos/indyavik/azuresdk/issues"
 
 issue_assignees = { 'KeyVault' : ['indyavik'] }
 
@@ -250,5 +251,3 @@ def payload():
 
 if __name__ == '__main__':
     app.run()
-
-
